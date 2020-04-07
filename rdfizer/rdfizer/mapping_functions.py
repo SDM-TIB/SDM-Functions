@@ -44,6 +44,13 @@ def replaceValue(value, value2, value3):
 def match(value, regex):
     return re.match(regex, value)[0]
 
+def variantIdentifier(column1, column2,prefix):
+    value = ""
+    if (str(column1) != "nan" and "?" not in str(column1)):
+        value = re.sub('_.*','',str(column2))+"_"+str(column1).split(".")[1].replace(">", "~")
+        value = prefix+value
+    return value
+
 def execute_function(row,dic):
     if "tolower" in dic["function"]:
         return tolower(row[dic["func_par"]["value"]])
@@ -64,6 +71,8 @@ def execute_function(row,dic):
         return replaceValue(row[dic["func_par"]["value"]],dic["func_par"]["value2"],dic["func_par"]["value3"])
     elif "match" in dic["function"]:
         return match(dic["func_par"]["regex"],row[dic["func_par"]["value"]])
+    elif "variantIdentifier" in dic["function"]:
+        return variantIdentifier(dic["func_par"]["column1"],dic["func_par"]["column2"],dic["func_par"]["prefix"])
     else:
         print("Invalid function")
         print("Aborting...")

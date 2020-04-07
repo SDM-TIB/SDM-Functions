@@ -235,6 +235,7 @@ def mapping_parser(mapping_file):
 					?_object_map rr:datatype ?object_datatype .
 				}
 				?_object_map fnml:functionValue ?function .
+				OPTIONAL {?_object_map rr:termType ?term .}
 			}
 			}
 			OPTIONAL {
@@ -1539,7 +1540,11 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 											"inputs":dic["inputs"], 
 											"function":dic["executes"],
 											"func_par":dic}
-							object = "\"" + execute_function(row,current_func) + "\""
+							if predicate_object_map.object_map.term is not None:
+								if "IRI" in predicate_object_map.object_map.term:
+									object = "<" + execute_function(row,current_func) + ">"
+							else:
+								object = "\"" + execute_function(row,current_func) + "\""
 						else:
 							continue
 
