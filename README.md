@@ -30,6 +30,10 @@ e-mail: dchaves@fi.upm.es
 Kemele Endris
 e-mail: Kemele.Endris@tib.eu 
 
+# SDM-Functions
+
+This version of the SDM-RDFizer has the capability of executing triple maps functions during the semantification process. 
+
 # RML-Test Cases
 See the results of the SDM-RDFizer over the RML test-cases at the [RML Implementation Report](http://rml.io/implementation-report/)
 
@@ -267,7 +271,7 @@ mapping: ${default:main_directory}/mappingDataset1.ttl
 ```
 ## Test Date
 ```
-12/07/2019
+30/03/2020
 ```
 
 # License
