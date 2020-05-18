@@ -1555,10 +1555,15 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 											"function":dic["executes"],
 											"func_par":dic}
 							if predicate_object_map.object_map.term is not None:
+								func = execute_function(row,current_func)
 								if "IRI" in predicate_object_map.object_map.term:
-									object = "<" + execute_function(row,current_func) + ">"
+									object = "<" + func + ">"
 							else:
-								object = "\"" + execute_function(row,current_func) + "\""
+								func = execute_function(row,current_func)
+								if "" != func:
+									object = "\"" + func + "\""
+								else:
+									object = None
 						else:
 							continue
 
