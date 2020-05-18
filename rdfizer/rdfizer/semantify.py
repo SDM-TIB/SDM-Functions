@@ -957,12 +957,19 @@ def semantify_json(triples_map, triples_map_list, delimiter, output_file_descrip
 		rdf_type = subject + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " + "<{}>.\n".format(triples_map.subject_map.rdf_class)
 		if triples_map.subject_map.graph is not None:
 			if "{" in triples_map.subject_map.graph:	
-				rdf_type = rdf_type[:-2] + " <" + string_substitution_json(triples_map.subject_map.graph, "{(.+?)}", data, "subject") + "> .\n"
+				rdf_type = rdf_type[:-2] + " <" + string_substitution(triples_map.subject_map.graph, "{(.+?)}", row, "subject") + "> .\n"
 			else:
 				rdf_type = rdf_type[:-2] + " <" + triples_map.subject_map.graph + "> .\n"
-		output_file_descriptor.write(rdf_type)
-		csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
-		i += 1
+		if duplicate == "yes":
+			if rdf_type not in generated_triples:
+				output_file_descriptor.write(rdf_type)
+				csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
+				generated_triples.update({rdf_type : number_triple + i + 1})
+				i += 1
+		else:
+			output_file_descriptor.write(rdf_type)
+			csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
+			i += 1
 
 	
 	for predicate_object_map in triples_map.predicate_object_maps_list:
@@ -1421,9 +1428,16 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 					rdf_type = rdf_type[:-2] + " <" + string_substitution(triples_map.subject_map.graph, "{(.+?)}", row, "subject") + "> .\n"
 				else:
 					rdf_type = rdf_type[:-2] + " <" + triples_map.subject_map.graph + "> .\n"
-			output_file_descriptor.write(rdf_type)
-			csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
-			i += 1
+			if duplicate == "yes":
+				if rdf_type not in generated_triples:
+					output_file_descriptor.write(rdf_type)
+					csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
+					generated_triples.update({rdf_type : number_triple + i + 1})
+					i += 1
+			else:
+				output_file_descriptor.write(rdf_type)
+				csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
+				i += 1
 
 		
 		for predicate_object_map in triples_map.predicate_object_maps_list:
