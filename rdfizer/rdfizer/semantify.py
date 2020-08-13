@@ -2760,7 +2760,14 @@ def semantify(config_path):
 											else:
 												number_triple += executor.submit(semantify_json, triples_map, triples_map_list, ",",output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 									elif config["datasets"]["dbType"] == "mysql":
-										database, query_list = translate_sql(triples_map)
+										#database, query_list = translate_sql(triples_map)
+										database = "None"
+										q = "SELECT * FROM "
+										if triples_map.tablename != "None":
+									        q += triples_map.tablename + ";"
+									    else:
+									        q += triples_map.data_source + ";"  
+										query_list = [q]
 										db = connector.connect(host = config[dataset_i]["host"], port = int(config[dataset_i]["port"]), user = config[dataset_i]["user"], password = config[dataset_i]["password"])
 										cursor = db.cursor(buffered=True)
 										if database != "None":
