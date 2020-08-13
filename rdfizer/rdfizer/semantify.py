@@ -2764,9 +2764,9 @@ def semantify(config_path):
 										database = "None"
 										q = "SELECT * FROM "
 										if triples_map.tablename != "None":
-									        q += triples_map.tablename + ";"
-									    else:
-									        q += triples_map.data_source + ";"  
+											q += triples_map.tablename + ";"
+										else:
+											q += triples_map.data_source + ";"  
 										query_list = [q]
 										db = connector.connect(host = config[dataset_i]["host"], port = int(config[dataset_i]["port"]), user = config[dataset_i]["user"], password = config[dataset_i]["password"])
 										cursor = db.cursor(buffered=True)
