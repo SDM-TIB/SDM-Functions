@@ -78,6 +78,33 @@ def execute_function(row,dic):
         print("Aborting...")
         sys.exit(1)
 
+def execute_function_mysql(row,header,dic):
+    if "tolower" in dic["function"]:
+        return tolower(row[header.index(dic["func_par"]["value"])])
+    elif "toupper" in dic["function"]:
+        return toupper(row[header.index(dic["func_par"]["value"])])
+    elif "totitle" in dic["function"]:
+        return totitle(row[header.index(dic["func_par"]["value"])])
+    elif "trim" in dic["function"]:
+        return trim(row[header.index(dic["func_par"]["value"])])
+    elif "chomp" in dic["function"]:
+        return chomp(row[header.index(dic["func_par"]["value"])],dic["func_par"]["toremove"])
+    elif "substring" in dic["function"]:
+        if "index2" in dic["func_par"].keys():
+            return substring(row[header.index(dic["func_par"]["value"])],dic["func_par"]["index1"],dic["func_par"]["index2"])
+        else:
+            return substring(row[header.index(dic["func_par"]["value"])],dic["func_par"]["index1"],None)
+    elif "replaceValue" in dic["function"]:
+        return replaceValue(row[header.index(dic["func_par"]["value"])],dic["func_par"]["value2"],dic["func_par"]["value3"])
+    elif "match" in dic["function"]:
+        return match(dic["func_par"]["regex"],row[header.index(dic["func_par"]["value"])])
+    elif "variantIdentifier" in dic["function"]:
+        return variantIdentifier(row[header.index(dic["func_par"]["column1"])],row[header.index(dic["func_par"]["column2"])],dic["func_par"]["prefix"])
+    else:
+        print("Invalid function")
+        print("Aborting...")
+        sys.exit(1)
+
 def create_dictionary(triple_map):
     dic = {}
     inputs = []

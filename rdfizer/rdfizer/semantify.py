@@ -1615,7 +1615,7 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 				continue
 	return i
 
-def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file_descriptor, csv_file, dataset_name):
+def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file_descriptor, csv_file, dataset_name,host, port, user, password,dbase):
 
 	"""
 	(Private function, not accessible from outside this package)
@@ -1978,12 +1978,13 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 										hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)								
 							else:
 								database, query_list = translate_sql(triples_map_element)
-								db = connector.connect(host="localhost", port=3306, user="root", password="06012009mj")
+								db = connector.connect(host=host, port=port, user=user, password=password)
 								cursor = db.cursor()
-								if database == None:
+								if database != "None":
 									cursor.execute("use " + database)
 								else:
-									cursor.execute("use test")
+									if dbase.lower() != "none":
+										cursor.execute("use " + dbase)
 								for query in query_list:
 									cursor.execute(query)
 									data = cursor
@@ -1998,10 +1999,11 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 							database2, query_list_origin = translate_sql(triples_map_element)
 							db = connector.connect(host = "localhost", port = 3306, user = "root", password = "06012009mj")
 							cursor = db.cursor()
-							if database == None:
+							if database != "None":
 								cursor.execute("use " + database)
 							else:
-								cursor.execute("use test")
+								if dbase.lower() != "none":
+									cursor.execute("use " + dbase)
 							for query in query_list:
 								for q in query_list_origin:
 									query_1 = q.split("FROM")
@@ -2018,6 +2020,28 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 					break
 				else:
 					continue
+
+		elif predicate_object_map.object_map.mapping_type == "reference function":
+			if subject is not None:
+				for triples_map_element in triples_map_list:
+					if triples_map_element.triples_map_id == predicate_object_map.object_map.value:
+						dic = create_dictionary(triples_map_element)
+						current_func = {"output_name":"OUTPUT" + str(i), 
+										"inputs":dic["inputs"], 
+										"function":dic["executes"],
+										"func_par":dic}
+						if predicate_object_map.object_map.term is not None:
+							func = execute_function_mysql(row,row_headers,current_func)
+							if "IRI" in predicate_object_map.object_map.term:
+								object = "<" + func + ">"
+						else:
+							func = execute_function_mysql(row,row_headers,current_func)
+							if "" != func:
+								object = "\"" + func + "\""
+							else:
+								object = None
+					else:
+						continue
 		else:
 			object = None
 
@@ -2728,25 +2752,23 @@ def semantify(config_path):
 											else:
 												number_triple += executor.submit(semantify_json, triples_map, triples_map_list, ",",output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 									elif config["datasets"]["dbType"] == "mysql":
-										user, password, port, host = config[dataset_i]["user"], config[dataset_i]["password"], int(config[dataset_i]["port"]), config[dataset_i]["host"]
 										database, query_list = translate_sql(triples_map)
-										db = connector.connect(host = host, port = port, user = user, password = password)
+										db = connector.connect(host = config[dataset_i]["host"], port = int(config[dataset_i]["port"]), user = config[dataset_i]["user"], password = config[dataset_i]["password"])
 										cursor = db.cursor()
 										if database != "None":
 											cursor.execute("use " + database)
 										else:
-											cursor.execute("use test")
+											if config[dataset_i]["db"].lower() != "none":
+												cursor.execute("use " + config[dataset_i]["db"])
 										if triples_map.query == "None":	
 											for query in query_list:
 												cursor.execute(query)
 												row_headers=[x[0] for x in cursor.description]
 												for row in cursor:
-													number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"]).result()
-										else:
-											cursor.execute(triples_map.query)
-											row_headers=[x[0] for x in cursor.description]
-											for row in cursor:
-												number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"]).result()
+													if config[dataset_i]["db"].lower() != "none":
+														number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"], config[dataset_i]["host"], int(config[dataset_i]["port"]), config[dataset_i]["user"], config[dataset_i]["password"],config[dataset_i]["db"]).result()
+													else:
+														number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"], config[dataset_i]["host"], int(config[dataset_i]["port"]), config[dataset_i]["user"], config[dataset_i]["password"],"None").result()
 									elif config["datasets"]["dbType"] == "postgres":
 										
 										user, password, db, host = config[dataset_i]["user"], config[dataset_i]["password"], config[dataset_i]["db"], config[dataset_i]["host"]	
