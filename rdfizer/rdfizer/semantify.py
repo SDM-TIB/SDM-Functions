@@ -482,7 +482,7 @@ def semantify_xml(triples_map, triples_map_list, output_file_descriptor, csv_fil
 												else:
 													database, query_list = translate_sql(triples_map)
 													db = connector.connect(host=host, port=port, user=user, password=password)
-													cursor = db.cursor()
+													cursor = db.cursor(buffered=True)
 													cursor.execute("use " + database)
 													for query in query_list:
 														cursor.execute(query)
@@ -625,7 +625,7 @@ def semantify_file_array(triples_map, triples_map_list, delimiter, output_file_d
 									else:
 										database, query_list = translate_sql(triples_map)
 										db = connector.connect(host=host, port=port, user=user, password=password)
-										cursor = db.cursor()
+										cursor = db.cursor(buffered=True)
 										cursor.execute("use " + database)
 										for query in query_list:
 											cursor.execute(query)
@@ -1039,7 +1039,7 @@ def semantify_json(triples_map, triples_map_list, delimiter, output_file_descrip
 								else:
 									database, query_list = translate_sql(triples_map)
 									db = connector.connect(host=host, port=port, user=user, password=password)
-									cursor = db.cursor()
+									cursor = db.cursor(buffered=True)
 									cursor.execute("use " + database)
 									for query in query_list:
 										cursor.execute(query)
@@ -1507,7 +1507,7 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 									else:
 										database, query_list = translate_sql(triples_map)
 										db = connector.connect(host=host, port=port, user=user, password=password)
-										cursor = db.cursor()
+										cursor = db.cursor(buffered=True)
 										cursor.execute("use " + database)
 										for query in query_list:
 											cursor.execute(query)
@@ -1981,7 +1981,7 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 							else:
 								database, query_list = translate_sql(triples_map_element)
 								db = connector.connect(host=host, port=port, user=user, password=password)
-								cursor = db.cursor()
+								cursor = db.cursor(buffered=True)
 								if database != "None":
 									cursor.execute("use " + database)
 								else:
@@ -2000,7 +2000,7 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 							database, query_list = translate_sql(triples_map)
 							database2, query_list_origin = translate_sql(triples_map_element)
 							db = connector.connect(host = "localhost", port = 3306, user = "root", password = "06012009mj")
-							cursor = db.cursor()
+							cursor = db.cursor(buffered=True)
 							if database != "None":
 								cursor.execute("use " + database)
 							else:
@@ -2762,7 +2762,7 @@ def semantify(config_path):
 									elif config["datasets"]["dbType"] == "mysql":
 										database, query_list = translate_sql(triples_map)
 										db = connector.connect(host = config[dataset_i]["host"], port = int(config[dataset_i]["port"]), user = config[dataset_i]["user"], password = config[dataset_i]["password"])
-										cursor = db.cursor()
+										cursor = db.cursor(buffered=True)
 										if database != "None":
 											cursor.execute("use " + database)
 										else:
@@ -2891,7 +2891,7 @@ def semantify(config_path):
 								#global user, password, port, host
 								user, password, port, host = config[dataset_i]["user"], config[dataset_i]["password"], int(config[dataset_i]["port"]), config[dataset_i]["host"]
 								db = connector.connect(host=host, port=port, user=user, password=password)
-								cursor = db.cursor()
+								cursor = db.cursor(buffered=True)
 								cursor.execute("use " + database)
 								for query in query_list:
 									cursor.execute(query)
