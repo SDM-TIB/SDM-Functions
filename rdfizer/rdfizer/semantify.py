@@ -1911,10 +1911,12 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 				subject = None
 
 	if triples_map.subject_map.rdf_class is not None and subject is not None and (subject + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " + "<{}> .\n".format(triples_map.subject_map.rdf_class)not in g_triples):
-		if "{" in triples_map.subject_map.graph:	
-			rdf_type = rdf_type[:-2] + " <" + string_substitution_array(triples_map.subject_map.graph, "{(.+?)}", row, row_headers,"subject") + "> .\n"
-		else:
-			rdf_type = rdf_type[:-2] + " <" + triples_map.subject_map.graph + "> .\n"
+		rdf_type = subject + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " + "<{}> .\n".format(triples_map.subject_map.rdf_class)
+		if triples_map.subject_map.graph is not None:
+			if "{" in triples_map.subject_map.graph:	
+				rdf_type = rdf_type[:-2] + " <" + string_substitution_array(triples_map.subject_map.graph, "{(.+?)}", row, row_headers,"subject") + "> .\n"
+			else:
+				rdf_type = rdf_type[:-2] + " <" + triples_map.subject_map.graph + "> .\n"
 		output_file_descriptor.write(rdf_type)
 		csv_file.writerow([dataset_name, number_triple + i + 1, time.time()-start_time])
 		g_triples.update({rdf_type : number_triple + i + 1})
@@ -2040,8 +2042,10 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 								object = "\"" + func + "\""
 							else:
 								object = None
-					else:
-						continue
+				if object == "":
+					object = None
+			else:
+				object = None
 		else:
 			object = None
 
@@ -2531,79 +2535,83 @@ def semantify_postgres(row, row_headers, triples_map, triples_map_list, output_f
 
 def translate_sql(triples_map):
 
-	query_list = []
-	
-	
-	proyections = []
+    query_list = []
+    
+    
+    proyections = []
 
-		
-	if "{" in triples_map.subject_map.value:
-		subject = triples_map.subject_map.value
-		count = count_characters(subject)
-		if (count == 1) and (subject.split("{")[1].split("}")[0] not in proyections):
-			subject = subject.split("{")[1].split("}")[0]
-			if "[" in subject:
-				subject = subject.split("[")[0]
-			proyections.append(subject)
-		elif count > 1:
-			subject_list = subject.split("{")
-			for s in subject_list:
-				if "}" in s:
-					subject = s.split("}")[0]
-					if "[" in subject:
-						subject = subject.split("[")
-					if subject not in proyections:
-						proyections.append(subject)
+        
+    if "{" in triples_map.subject_map.value:
+        subject = triples_map.subject_map.value
+        count = count_characters(subject)
+        if (count == 1) and (subject.split("{")[1].split("}")[0] not in proyections):
+            subject = subject.split("{")[1].split("}")[0]
+            if "[" in subject:
+                subject = subject.split("[")[0]
+            proyections.append(subject)
+        elif count > 1:
+            subject_list = subject.split("{")
+            for s in subject_list:
+                if "}" in s:
+                    subject = s.split("}")[0]
+                    if "[" in subject:
+                        subject = subject.split("[")
+                    if subject not in proyections:
+                        proyections.append(subject)
+    else:
+    	if triples_map.subject_map.value not in proyections:
+    		proyections.append(triples_map.subject_map.value)
 
-	for po in triples_map.predicate_object_maps_list:
-		if "{" in po.object_map.value:
-			count = count_characters(po.object_map.value)
-			if 0 < count <= 1 :
-				predicate = po.object_map.value.split("{")[1].split("}")[0]
-				if "[" in predicate:
-					predicate = predicate.split("[")[0]
-				if predicate not in proyections:
-					proyections.append(predicate)
+    for po in triples_map.predicate_object_maps_list:
+        if "{" in po.object_map.value:
+            count = count_characters(po.object_map.value)
+            if 0 < count <= 1 :
+                predicate = po.object_map.value.split("{")[1].split("}")[0]
+                if "[" in predicate:
+                    predicate = predicate.split("[")[0]
+                if predicate not in proyections:
+                    proyections.append(predicate)
 
-			elif 1 < count:
-				predicate = po.object_map.value.split("{")
-				for po_e in predicate:
-					if "}" in po_e:
-						pre = po_e.split("}")[0]
-						if "[" in pre:
-							pre = pre.split("[")
-						if pre not in proyections:
-							proyections.append(pre)
-		elif "#" in po.object_map.value:
-			pass
-		elif "/" in po.object_map.value:
-			pass
-		else:
-			predicate = po.object_map.value 
-			if "[" in predicate:
-				predicate = predicate.split("[")[0]
-			if predicate not in proyections:
-					proyections.append(predicate)
-		if po.object_map.child != None:
-			if po.object_map.child not in proyections:
-					proyections.append(po.object_map.child)
+            elif 1 < count:
+                predicate = po.object_map.value.split("{")
+                for po_e in predicate:
+                    if "}" in po_e:
+                        pre = po_e.split("}")[0]
+                        if "[" in pre:
+                            pre = pre.split("[")
+                        if pre not in proyections:
+                            proyections.append(pre)
+        elif "#" in po.object_map.value:
+            pass
+        elif "/" in po.object_map.value:
+            pass
+        else:
+            predicate = po.object_map.value 
+            if "[" in predicate:
+                predicate = predicate.split("[")[0]
+            if predicate not in proyections:
+                proyections.append(predicate)
+        if po.object_map.child != None:
+            for c in po.object_map.child:
+                if c not in proyections:
+                    proyections.append(c)
 
-	temp_query = "SELECT "
-	for p in proyections:
-		if p is not "None":
-			if p == proyections[len(proyections)-1]:
-				temp_query += p
-			else:
-				temp_query += p + ", " 
-		else:
-			temp_query = temp_query[:-2] 
-	if triples_map.tablename != "None":
-		temp_query = temp_query + " FROM " + triples_map.tablename + ";"
-	else:
-		temp_query = temp_query + " FROM " + triples_map.data_source + ";"
-	query_list.append(temp_query)
+    temp_query = "SELECT DISTINCT "
+    for p in proyections:
+        if type(p) == str:
+            if p is not "None":
+                temp_query += "`" + p + "`, "
+        elif type(p) == list:
+            for pr in p:
+                temp_query += "`" + pr + "`, " 
+    temp_query = temp_query[:-2] 
+    if triples_map.tablename != "None":
+        temp_query = temp_query + " FROM " + triples_map.tablename + ";"
+    else:
+        temp_query = temp_query + " FROM " + triples_map.data_source + ";"
+    query_list.append(temp_query)
 
-	return triples_map.iterator, query_list
+    return triples_map.iterator, query_list
 
 
 def translate_postgressql(triples_map):
@@ -2762,6 +2770,24 @@ def semantify(config_path):
 												cursor.execute("use " + config[dataset_i]["db"])
 										if triples_map.query == "None":	
 											for query in query_list:
+												for triples_map_element in triples_map_list:
+													if triples_map_element.triples_map_id in query:
+														dic = create_dictionary(triples_map_element)
+														current_func = {"output_name": "OUTPUT",
+																	"output_file": triples_map_element.triples_map_id + "_OUTPUT", 
+																	"inputs":dic["inputs"], 
+																	"function":dic["executes"],
+																	"func_par":dic,
+																	"termType":False}
+														if "variantIdentifier" in current_func["function"]:
+															if current_func["func_par"]["column1"] not in query and current_func["func_par"]["column2"] in query:
+																query = query.replace("`" + triples_map_element.triples_map_id + "`","`" + current_func["func_par"]["column1"] + "`")
+															elif current_func["func_par"]["column1"] in query and current_func["func_par"]["column2"] not in query:
+																query = query.replace("`" + triples_map_element.triples_map_id + "`","`" + current_func["func_par"]["column2"] + "`")
+															elif current_func["func_par"]["column1"] not in query and current_func["func_par"]["column2"] not in query:
+																query = query.replace("`" + triples_map_element.triples_map_id + "`","`" + current_func["func_par"]["column1"]+"`, `"+current_func["func_par"]["column2"]+ "`")
+														else:
+															query = query.replace("`" + triples_map_element.triples_map_id + "`","`" + current_func["func_par"]["value"] + "`")
 												cursor.execute(query)
 												row_headers=[x[0] for x in cursor.description]
 												for row in cursor:
@@ -2769,6 +2795,14 @@ def semantify(config_path):
 														number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"], config[dataset_i]["host"], int(config[dataset_i]["port"]), config[dataset_i]["user"], config[dataset_i]["password"],config[dataset_i]["db"]).result()
 													else:
 														number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"], config[dataset_i]["host"], int(config[dataset_i]["port"]), config[dataset_i]["user"], config[dataset_i]["password"],"None").result()
+										else:
+											cursor.execute(triples_map.query)
+											row_headers=[x[0] for x in cursor.description]
+											for row in cursor:
+												if config[dataset_i]["db"].lower() != "none":
+													number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"], config[dataset_i]["host"], int(config[dataset_i]["port"]), config[dataset_i]["user"], config[dataset_i]["password"],config[dataset_i]["db"]).result()
+												else:
+													number_triple += executor.submit(semantify_mysql, row, row_headers, triples_map, triples_map_list, output_file_descriptor, wr, config[dataset_i]["name"], config[dataset_i]["host"], int(config[dataset_i]["port"]), config[dataset_i]["user"], config[dataset_i]["password"],"None").result()
 									elif config["datasets"]["dbType"] == "postgres":
 										
 										user, password, db, host = config[dataset_i]["user"], config[dataset_i]["password"], config[dataset_i]["db"], config[dataset_i]["host"]	
