@@ -1,6 +1,40 @@
 import re
 import csv
 import sys
+from pathlib import Path
+import requests
+import json
+import os
+
+global exactMatchDic
+exactMatchDic = dict()
+
+headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
+def falcon_UMLS_CUI_function(value):
+    output = ""
+    url = 'http://node1.research.tib.eu:9002/umlsmatching?type=cui'
+    text = str(value).replace("_"," ")
+    payload = '{"data":"'+text+'"}'
+    r = requests.post(url, data=payload.encode('utf-8'), headers=headers)
+    if r.status_code == 200:
+        response=r.json()
+        return response['cui'][0]
+    else:
+        return ""
+
+def replaceExactMatch(value):                       
+    if value != "":
+        replacedValue = exactMatchDic[value]
+    else:
+        replacedValue = "" 
+    return(replacedValue)
+
+def dictionaryCreation():
+    directory = Path(os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))).parent.absolute()
+    with open(str(directory)+"/Sources/label_cui_dictionary.csv",'r') as data:
+        for row in csv.DictReader(data):
+            exactMatchDic.update({row['SampleOriginLabel']:row['CUI']}) 
+dictionaryCreation()
 
 # returns a string in lower case
 def tolower(value):
@@ -52,7 +86,7 @@ def variantIdentifier(column1, column2,prefix):
     return value
 
 def execute_function(row,dic):
-    if "tolower" in dic["function"]:
+    if "tolower" in dic["function"].lower():
         return tolower(row[dic["func_par"]["value"]])
     elif "toupper" in dic["function"]:
         return toupper(row[dic["func_par"]["value"]])
@@ -73,6 +107,10 @@ def execute_function(row,dic):
         return match(dic["func_par"]["regex"],row[dic["func_par"]["value"]])
     elif "variantIdentifier" in dic["function"]:
         return variantIdentifier(row[dic["func_par"]["column1"]],row[dic["func_par"]["column2"]],dic["func_par"]["prefix"])
+    elif "falcon_UMLS_CUI_function" in dic["function"]:
+        return falcon_UMLS_CUI_function(row[dic["func_par"]["value"]])
+    elif "replaceExactMatch" in dic["function"]:
+        return replaceExactMatch(row[dic["func_par"]["value"]])
     else:
         print("Invalid function")
         print("Aborting...")
@@ -100,6 +138,10 @@ def execute_function_mysql(row,header,dic):
         return match(dic["func_par"]["regex"],row[header.index(dic["func_par"]["value"])])
     elif "variantIdentifier" in dic["function"]:
         return variantIdentifier(row[header.index(dic["func_par"]["column1"])],row[header.index(dic["func_par"]["column2"])],dic["func_par"]["prefix"])
+    elif "falcon_UMLS_CUI_function" in dic["function"]:
+        return falcon_UMLS_CUI_function(row[header.index(dic["func_par"]["value"])])
+    elif "replaceExactMatch" in dic["function"]:
+        return replaceExactMatch(row[header.index(dic["func_par"]["value"])])
     else:
         print("Invalid function")
         print("Aborting...")
