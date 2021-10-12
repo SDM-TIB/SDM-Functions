@@ -34,8 +34,12 @@ class TriplesMap:
 		self.tablename = tablename
 		self.query = query
 
-		self.subject_map = subject_map
-
+		if subject_map is not None:
+			self.subject_map = subject_map
+		else:
+			print("Subject map cannot be empty")
+			print("Aborting...")
+			exit(1)
 
 		self.predicate_object_maps_list = predicate_object_maps_list
 		self.function = function
@@ -54,14 +58,13 @@ class TriplesMap:
 		value += "\tlogical source: {}\n".format(self.data_source)
 		value += "\treference formulation: {}\n".format(self.reference_formulation)
 		value += "\titerator: {}\n".format(self.iterator)
-		if self.subject_map is not None:
-			value += "\tsubject map: {}\n".format(self.subject_map.value)
-		else:
-			value += "\tsubject map: None"
+		value += "\tsubject map: {}\n".format(self.subject_map.value)
 
 		for predicate_object_map in self.predicate_object_maps_list:
 			value += "\t\tpredicate: {} - mapping type: {}\n".format(predicate_object_map.predicate_map.value, predicate_object_map.predicate_map.mapping_type)
 			value += "\t\tobject: {} - mapping type: {} - datatype: {}\n\n".format(predicate_object_map.object_map.value, predicate_object_map.object_map.mapping_type, str(predicate_object_map.object_map.datatype))
+			if predicate_object_map.object_map.mapping_type == "parent triples map":
+				value += "\t\t\tjoin condition: - child: {} - parent: {} \n\n\n".format(predicate_object_map.object_map.child,predicate_object_map.object_map.parent)
 
 		return value + "\n"
 
@@ -90,7 +93,7 @@ class SubjectMap:
 
 class PredicateObjectMap:
 	
-	def __init__(self, predicate_map, object_map):
+	def __init__(self, predicate_map, object_map, graph):
 
 		"""
 		Constructor of a PredicateObjectMap object
@@ -106,6 +109,7 @@ class PredicateObjectMap:
 
 		self.predicate_map = predicate_map
 		self.object_map = object_map
+		self.graph = graph
 
 class PredicateMap:
 
@@ -147,7 +151,7 @@ class ObjectMap:
 		self.value = object_value
 		self.datatype = object_datatype if object_datatype != "None" else None 
 		self.mapping_type = object_mapping_type
-		self.child = object_child if object_child != "None" else None
-		self.parent = object_parent if object_parent != "None" else None
+		self.child = object_child if "None" not in object_child  else None
+		self.parent = object_parent if "None" not in object_parent else None
 		self.term = term if term != "None" else None
 		self.language = language if language != "None" else None
