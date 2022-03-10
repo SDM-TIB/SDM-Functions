@@ -45,6 +45,13 @@ dictionaryCreation()
 def tolower(value):
     return value.lower()
 
+# returns the concatenation of two strings
+def concat2(value1,value2):
+    if bool(value1) and bool(value2):
+        result = str(str(value1)+str(value2))
+    else:
+        result = ""  
+    return(result)
 
 # return a string in upper case
 def toupper(value):
