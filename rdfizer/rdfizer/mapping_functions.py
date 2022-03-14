@@ -9,39 +9,8 @@ import os
 global exactMatchDic
 exactMatchDic = dict()
 
-def inner_function(row,dic,triples_map_list):
-    functions = []
-    keys = []
-    for attr in dic["inputs"]:
-        if ("reference function" in attr[1]):
-            functions.append(attr[0])
-        elif "constant" not in attr[1]:
-            keys.append(attr[0])
-    if functions:
-        temp_dics = {}
-        for function in functions:
-            for tp in triples_map_list:
-                if tp.triples_map_id == function:
-                    temp_dic = create_dictionary(tp)
-                    current_func = {"inputs":temp_dic["inputs"], 
-                                    "function":temp_dic["executes"],
-                                    "func_par":temp_dic,
-                                    "termType":True}
-                    temp_dics[function] = current_func
-        temp_row = {}
-        for dics in temp_dics:
-            value = inner_function(row,temp_dics[dics],triples_map_list)
-            temp_row[dics] = value
-        for key in keys:
-            temp_row[key] = row[key]
-        return execute_function(temp_row,None,dic)
-    else:
-        return execute_function(row,None,dic)
-
 headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
-
-def falcon_UMLS_CUI_function():
-    value = global_dic["value"]
+def falcon_UMLS_CUI_function(value):
     output = ""
     url = 'https://labs.tib.eu/sdm/biofalcon/api?mode=short'
     text = str(value).replace("_"," ")
@@ -56,6 +25,14 @@ def falcon_UMLS_CUI_function():
     else:
         return ""
 
+def reverseString(value):    
+    if str(value) != "":
+        output = str(value)[::-1]
+    else:
+        output = ""
+    return(output) 
+
+'''
 def replaceExactMatch(value):                       
     if value != "":
         replacedValue = exactMatchDic[value]
@@ -69,12 +46,11 @@ def dictionaryCreation():
         for row in csv.DictReader(data):
             exactMatchDic.update({row['SampleOriginLabel']:row['CUI']}) 
 dictionaryCreation()
-
+'''
 # returns a string in lower case
-def tolower(value):
-    return value.lower()
+def toLower(value):
+    return str(value).lower()
 
-# returns the concatenation of two strings
 def concat2(value1,value2):
     if bool(value1) and bool(value2):
         result = str(str(value1)+str(value2))
@@ -127,8 +103,8 @@ def variantIdentifier(column1, column2,prefix):
     return value
 
 def execute_function(row,dic):
-    if "tolower" in dic["function"].lower():
-        return tolower(row[dic["func_par"]["value"]])
+    if "toLower" in dic["function"]:
+        return toLower(row[dic["func_par"]["value"]])
     elif "toupper" in dic["function"]:
         return toupper(row[dic["func_par"]["value"]])
     elif "totitle" in dic["function"]:
@@ -152,14 +128,16 @@ def execute_function(row,dic):
         return falcon_UMLS_CUI_function(row[dic["func_par"]["value"]])
     elif "replaceExactMatch" in dic["function"]:
         return replaceExactMatch(row[dic["func_par"]["value"]])
+    elif "reverseString" in dic["function"]:
+        return reverseString(row[dic["func_par"]["value"]])
     else:
         print("Invalid function")
         print("Aborting...")
         sys.exit(1)
 
 def execute_function_mysql(row,header,dic):
-    if "tolower" in dic["function"]:
-        return tolower(row[header.index(dic["func_par"]["value"])])
+    if "toLower" in dic["function"]:
+        return toLower(row[header.index(dic["func_par"]["value"])])
     elif "toupper" in dic["function"]:
         return toupper(row[header.index(dic["func_par"]["value"])])
     elif "totitle" in dic["function"]:
