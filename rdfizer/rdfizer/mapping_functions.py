@@ -34,9 +34,9 @@ def inner_function(row,dic,triples_map_list):
             temp_row[dics] = value
         for key in keys:
             temp_row[key] = row[key]
-        return execute_function(temp_row,None,dic)
+        return execute_function(temp_row,dic)
     else:
-        return execute_function(row,None,dic)
+        return execute_function(row,dic)
 
 headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
 def falcon_UMLS_CUI_function(value):
