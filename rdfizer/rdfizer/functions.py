@@ -6,6 +6,12 @@ import xml.etree.ElementTree as ET
 import urllib
 import math
 
+def inner_function_exists(inner_func, inner_functions):
+	for inner_function in inner_functions:
+		if inner_func["id"] in inner_function["id"]:
+			return False
+	return True
+
 def extract_base(file):
 	base = ""
 	f = open(file,"r")

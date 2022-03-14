@@ -137,7 +137,7 @@ def join_iterator(data, iterator, parent, child):
 					break
 	else:
 		if parent.triples_map_id + "_" + child.child[0] not in join_table:
-			hash_maker([data], parent, child)
+			hash_maker([data], parent, child, triples_map_list)
 		else:
 			hash_update([data], parent, child, parent.triples_map_id + "_" + child.child[0])
 
@@ -180,13 +180,13 @@ def hash_update(parent_data, parent_subject, child_object,join_id):
 							value = "<" + value[1:-1] + ">"
 						elif "http" in value and "<" in value:
 							value = value[1:-1] 
-					hash_table.update({row[child_object.parent[0]] : [value]}) 
+					hash_table.update({row[child_object.parent[0]] : {value : "object"}}) 
 				else:
 					if string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) is not None:	
 						hash_table.update({row[child_object.parent[0]] : {"<" + string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) + ">" : "object"}})
 	join_table[join_id].update(hash_table)
 
-def hash_maker(parent_data, parent_subject, child_object):
+def hash_maker(parent_data, parent_subject, child_object, triples_map_list):
 	hash_table = {}
 	for row in parent_data:
 		if child_object.parent[0] in row.keys():
@@ -201,6 +201,32 @@ def hash_maker(parent_data, parent_subject, child_object):
 								value = value[1:-1] 
 						if value not in hash_table[row[child_object.parent[0]]]:
 							hash_table[row[child_object.parent[0]]].update({value : "object"})
+					elif parent_subject.subject_map.subject_mapping_type == "reference":
+						temp_dics = []
+						for triples_map_element in triples_map_list:
+							if triples_map_element.triples_map_id == triples_map.subject_map.value:
+								dic = create_dictionary(triples_map_element)
+								current_func = {"output_name":"OUTPUT" + str(i), 
+												"inputs":dic["inputs"], 
+												"function":dic["executes"],
+												"func_par":dic}
+								for inputs in dic["inputs"]:
+									temp_dic = {}
+									if "reference function" in inputs:
+										temp_dic = {"inputs":dic["inputs"], 
+														"function":dic["executes"],
+														"func_par":dic,
+														"id":triples_map_element.triples_map_id}
+										if inner_function_exists(temp_dic, temp_dics):
+											temp_dics.append(temp_dic)
+								if temp_dics:
+									value = inner_function(row,current_func,triples_map_list)
+								else:
+									value = execute_function(row,current_func)
+								if value not in hash_table[row[child_object.parent[0]]]:
+									hash_table[row[child_object.parent[0]]].update({value : "object"})
+							else:
+								continue
 					else:
 						if string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) is not None:
 							if "<" + string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) + ">" not in hash_table[row[child_object.parent[0]]]:
@@ -213,6 +239,31 @@ def hash_maker(parent_data, parent_subject, child_object):
 						elif "http" in value and "<" in value:
 							value = value[1:-1] 
 						hash_table[row[child_object.parent[0]]].update({value : "object"})
+					elif parent_subject.subject_map.subject_mapping_type == "reference":
+						temp_dics = []
+						for triples_map_element in triples_map_list:
+							if triples_map_element.triples_map_id == triples_map.subject_map.value:
+								dic = create_dictionary(triples_map_element)
+								current_func = {"output_name":"OUTPUT" + str(i), 
+												"inputs":dic["inputs"], 
+												"function":dic["executes"],
+												"func_par":dic}
+								for inputs in dic["inputs"]:
+									temp_dic = {}
+									if "reference function" in inputs:
+										temp_dic = {"inputs":dic["inputs"], 
+														"function":dic["executes"],
+														"func_par":dic,
+														"id":triples_map_element.triples_map_id}
+										if inner_function_exists(temp_dic, temp_dics):
+											temp_dics.append(temp_dic)
+								if temp_dics:
+									value = inner_function(row,current_func,triples_map_list)
+								else:
+									value = execute_function(row,current_func)
+								hash_table[row[child_object.parent[0]]].update({value : "object"})
+							else:
+								continue
 					else:
 						if string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) is not None:
 							hash_table[row[child_object.parent[0]]].update({"<" + string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) + ">" : "object"})
@@ -225,7 +276,32 @@ def hash_maker(parent_data, parent_subject, child_object):
 							value = "<" + value[1:-1] + ">"
 						elif "http" in value and "<" in value:
 							value = value[1:-1] 
-					hash_table.update({row[child_object.parent[0]] : {value : "object"}}) 
+					hash_table.update({row[child_object.parent[0]] : {value : "object"}})
+				elif parent_subject.subject_map.subject_mapping_type == "reference":
+					temp_dics = []
+					for triples_map_element in triples_map_list:
+						if triples_map_element.triples_map_id == triples_map.subject_map.value:
+							dic = create_dictionary(triples_map_element)
+							current_func = {"output_name":"OUTPUT" + str(i), 
+											"inputs":dic["inputs"], 
+											"function":dic["executes"],
+											"func_par":dic}
+							for inputs in dic["inputs"]:
+								temp_dic = {}
+								if "reference function" in inputs:
+									temp_dic = {"inputs":dic["inputs"], 
+													"function":dic["executes"],
+													"func_par":dic,
+													"id":triples_map_element.triples_map_id}
+									if inner_function_exists(temp_dic, temp_dics):
+										temp_dics.append(temp_dic)
+							if temp_dics:
+								value = inner_function(row,current_func,triples_map_list)
+							else:
+								value = execute_function(row,current_func)
+							hash_table.update({row[child_object.parent[0]] : {value : "object"}})
+						else:
+							continue 
 				else:
 					if string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) is not None:
 						hash_table.update({row[child_object.parent[0]] : {"<" + string_substitution(parent_subject.subject_map.value, "{(.+?)}", row, "object", ignore, parent_subject.iterator) + ">" : "object"}})
@@ -930,13 +1006,13 @@ def semantify_xml(triples_map, triples_map_list, output_file_descriptor, csv_fil
 											with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 												if str(triples_map_element.file_format).lower() == "csv":
 													data = csv.DictReader(input_file_descriptor, delimiter=delimiter)
-													hash_maker(data, triples_map_element, predicate_object_map.object_map)
+													hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 												else:
 													data = json.load(input_file_descriptor)
 													if isinstance(data, list):
-														hash_maker(data, triples_map_element, predicate_object_map.object_map)
+														hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 													elif len(data) < 2:
-														hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+														hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 
 										elif triples_map_element.file_format == "XPath":
 											with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
@@ -1745,13 +1821,13 @@ def semantify_json(triples_map, triples_map_list, delimiter, output_file_descrip
 										with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 											if str(triples_map_element.file_format).lower() == "csv":
 												data_element = csv.DictReader(input_file_descriptor, delimiter=delimiter)
-												hash_maker(data_element, triples_map_element, predicate_object_map.object_map)
+												hash_maker(data_element, triples_map_element, predicate_object_map.object_map, triples_map_list)
 											else:
 												data_element = json.load(input_file_descriptor)
 												if triples_map_element.iterator != "None" and triples_map_element.iterator != "$.[*]":
 													join_iterator(data_element, triples_map_element.iterator, triples_map_element, predicate_object_map.object_map)
 												else:
-													hash_maker(element[list(element.keys())[0]], triples_map_element, predicate_object_map.object_map)
+													hash_maker(element[list(element.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 
 									elif triples_map_element.file_format == "XPath":
 										with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
@@ -1779,13 +1855,13 @@ def semantify_json(triples_map, triples_map_list, delimiter, output_file_descrip
 										with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 											if str(triples_map_element.file_format).lower() == "csv":
 												data = csv.DictReader(input_file_descriptor, delimiter=delimiter)
-												hash_maker(data, triples_map_element, predicate_object_map.object_map)
+												hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 											else:
 												parent_data = json.load(input_file_descriptor)
 												if triples_map_element.iterator != "None":
 													join_iterator(parent_data, triples_map_element.iterator, triples_map_element, predicate_object_map.object_map)
 												else:
-													hash_maker(parent_data[list(parent_data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+													hash_maker(parent_data[list(parent_data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 									if predicate_object_map.object_map.child[0] in data.keys():
 										if data[predicate_object_map.object_map.child[0]] in join_table[triples_map_element.triples_map_id + "_" + predicate_object_map.object_map.child[0]]:
 											object_list = join_table[triples_map_element.triples_map_id + "_" + predicate_object_map.object_map.child[0]][data[predicate_object_map.object_map.child[0]]]
@@ -2133,7 +2209,7 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 							if "http" not in subject_value:
 								subject = "<" + base + subject_value + ">"
 							else:
-								subject = "<" + base + encode_char(subject_value) + ">"
+								subject = "<" + encode_char(subject_value) + ">"
 						except:
 							subject = None
 
@@ -2206,7 +2282,32 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 
 		elif "constant" in triples_map.subject_map.subject_mapping_type:
 			subject = "<" + subject_value + ">"
-
+		elif "function" in triples_map.subject_map.subject_mapping_type:
+			temp_dics = []
+			for triples_map_element in triples_map_list:
+				if triples_map_element.triples_map_id == triples_map.subject_map.value:
+					dic = create_dictionary(triples_map_element)
+					current_func = {"output_name":"OUTPUT" + str(i), 
+									"inputs":dic["inputs"], 
+									"function":dic["executes"],
+									"func_par":dic}
+					for inputs in dic["inputs"]:
+						temp_dic = {}
+						if "reference function" in inputs:
+							temp_dic = {"inputs":dic["inputs"], 
+											"function":dic["executes"],
+											"func_par":dic,
+											"id":triples_map_element.triples_map_id}
+							if inner_function_exists(temp_dic, temp_dics):
+								temp_dics.append(temp_dic)
+					if temp_dics:
+						func = inner_function(row,current_func,triples_map_list)
+						subject = "<" + encode_char(func) + ">"
+					else:
+						func = execute_function(row,current_func)
+						subject = "<" + encode_char(func) + ">"
+				else:
+					continue
 		else:
 			if triples_map.subject_map.condition == "":
 
@@ -2302,6 +2403,8 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 						object = "<" + string_substitution(predicate_object_map.object_map.value, "{(.+?)}", row, "object",ignore, triples_map.iterator) + ">"
 					elif "IRI" in predicate_object_map.object_map.term:
 						object = "<" + string_substitution(predicate_object_map.object_map.value, "{(.+?)}", row, "object",ignore, triples_map.iterator) + ">"
+					elif "BlankNode" in predicate_object_map.object_map.term:
+						object = "_:" + string_substitution(predicate_object_map.object_map.value, "{(.+?)}", row, "object",ignore, triples_map.iterator)
 					else:
 						object = "\"" + string_substitution(predicate_object_map.object_map.value, "{(.+?)}", row, "object",ignore, triples_map.iterator) + "\""
 				except TypeError:
@@ -2340,7 +2443,7 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 											with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 												if str(triples_map_element.file_format).lower() == "csv":
 													data = csv.DictReader(input_file_descriptor, delimiter=delimiter)
-													hash_maker(data, triples_map_element, predicate_object_map.object_map)
+													hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 												else:
 													data = json.load(input_file_descriptor)
 													if triples_map_element.iterator:
@@ -2348,14 +2451,14 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 															join_iterator(data, triples_map_element.iterator, triples_map_element, predicate_object_map.object_map)
 														else:
 															if isinstance(data, list):
-																hash_maker(data, triples_map_element, predicate_object_map.object_map)
+																hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 															elif len(data) < 2:
-																hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+																hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 													else:
 														if isinstance(data, list):
-															hash_maker(data, triples_map_element, predicate_object_map.object_map)
+															hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 														elif len(data) < 2:
-															hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+															hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 
 										elif triples_map_element.file_format == "XPath":
 											with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
@@ -2387,14 +2490,14 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 																join_iterator(data, triples_map_element.iterator, triples_map_element, predicate_object_map.object_map)
 															else:
 																if isinstance(data, list):
-																	hash_maker(data, triples_map_element, predicate_object_map.object_map)
+																	hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 																elif len(data) < 2:
-																	hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+																	hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 														else:
 															if isinstance(data, list):
-																hash_maker(data, triples_map_element, predicate_object_map.object_map)
+																hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 															elif len(data) < 2:
-																hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+																hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 											if child_list_value(predicate_object_map.object_map.child,row) in join_table[triples_map_element.triples_map_id + "_" + predicate_object_map.object_map.child[0]]:
 												object_list = join_table[triples_map_element.triples_map_id + "_" + predicate_object_map.object_map.child[0]][row[predicate_object_map.object_map.child[0]]]
 											else:
@@ -2465,6 +2568,7 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 
 			elif predicate_object_map.object_map.mapping_type == "reference function":
 				if subject is not None:
+					temp_dics = []
 					for triples_map_element in triples_map_list:
 						if triples_map_element.triples_map_id == predicate_object_map.object_map.value:
 							dic = create_dictionary(triples_map_element)
@@ -2472,16 +2576,36 @@ def semantify_file(triples_map, triples_map_list, delimiter, output_file_descrip
 											"inputs":dic["inputs"], 
 											"function":dic["executes"],
 											"func_par":dic}
-							if predicate_object_map.object_map.term is not None:
-								func = execute_function(row,current_func)
-								if "IRI" in predicate_object_map.object_map.term:
-									object = "<" + encode_char(func) + ">"
-							else:
-								func = execute_function(row,current_func)
-								if "" != func:
-									object = "\"" + func + "\""
+							for inputs in dic["inputs"]:
+								temp_dic = {}
+								if "reference function" in inputs:
+									temp_dic = {"inputs":dic["inputs"], 
+													"function":dic["executes"],
+													"func_par":dic,
+													"id":triples_map_element.triples_map_id}
+									if inner_function_exists(temp_dic, temp_dics):
+										temp_dics.append(temp_dic)
+							if temp_dics:
+								func = inner_function(row,current_func,triples_map_list)
+								if predicate_object_map.object_map.term is not None:
+									if "IRI" in predicate_object_map.object_map.term:
+										object = "<" + encode_char(func) + ">"
 								else:
-									object = None
+									if "" != func:
+										object = "\"" + func + "\""
+									else:
+										object = None
+							else:
+								if predicate_object_map.object_map.term is not None:
+									func = execute_function(row,current_func)
+									if "IRI" in predicate_object_map.object_map.term:
+										object = "<" + encode_char(func) + ">"
+								else:
+									func = execute_function(row,current_func)
+									if "" != func:
+										object = "\"" + func + "\""
+									else:
+										object = None
 						else:
 							continue
 				else:
@@ -2948,10 +3072,10 @@ def semantify_mysql(row, row_headers, triples_map, triples_map_list, output_file
 									with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 										if str(triples_map_element.file_format).lower() == "csv":
 											data = csv.DictReader(input_file_descriptor, delimiter=delimiter)
-											hash_maker(data, triples_map_element, predicate_object_map.object_map)
+											hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 										else:
 											data = json.load(input_file_descriptor)
-											hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+											hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 								elif triples_map_element.file_format == "XPath":
 									with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 										child_tree = ET.parse(input_file_descriptor)
@@ -3622,10 +3746,10 @@ def semantify_postgres(row, row_headers, triples_map, triples_map_list, output_f
 								with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
 									if str(triples_map_element.file_format).lower() == "csv":
 										data = csv.DictReader(input_file_descriptor, delimiter=delimiter)
-										hash_maker(data, triples_map_element, predicate_object_map.object_map)
+										hash_maker(data, triples_map_element, predicate_object_map.object_map, triples_map_list)
 									else:
 										data = json.load(input_file_descriptor)
-										hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map)
+										hash_maker(data[list(data.keys())[0]], triples_map_element, predicate_object_map.object_map, triples_map_list)
 
 							elif triples_map_element.file_format == "XPath":
 								with open(str(triples_map_element.data_source), "r") as input_file_descriptor:
@@ -4103,7 +4227,7 @@ def semantify(config_path):
 		os.mkdir(config["datasets"]["output_folder"])
 
 	global number_triple
-
+	start = time.time()
 	if config["datasets"]["all_in_one_file"] == "no":
 		with open(config["datasets"]["output_folder"] + "/" +  config["datasets"]["name"] + "_datasets_stats.csv", 'w') as myfile:
 			wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
@@ -4122,13 +4246,15 @@ def semantify(config_path):
 					with open(output_file, "w", encoding = "utf-8") as output_file_descriptor:
 						sorted_sources, predicate_list, order_list = files_sort(triples_map_list, config["datasets"]["ordered"])
 						if sorted_sources:
-
 							if order_list:
 								for source_type in order_list:
 									if source_type == "csv":
 										for source in order_list[source_type]:
 											if config["datasets"]["large_file"].lower() == "false":
-												reader = pd.read_csv(source, dtype = str)
+												if ".csv" in source:
+													reader = pd.read_csv(source, dtype = str)
+												else:
+													reader = pd.read_csv(source, dtype = str, sep='\t')
 												reader = reader.where(pd.notnull(reader), None)
 												if duplicate == "yes":
 													reader = reader.drop_duplicates(keep ='first')
@@ -4140,9 +4266,12 @@ def semantify(config_path):
 													else:
 														number_triple += executor.submit(semantify_file_array, sorted_sources[source_type][source][triples_map], triples_map_list, ",", output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 											else:
-												with open(source, "r") as input_file_descriptor:
-													data = csv.DictReader(input_file_descriptor, delimiter=',') 
-													for triples_map in sorted_sources[source_type][source]:
+												for triples_map in sorted_sources[source_type][source]:
+													with open(source, "r") as input_file_descriptor:
+														if ".csv" in source:
+															data = csv.DictReader(input_file_descriptor, delimiter=',')
+														else:
+															data = csv.DictReader(input_file_descriptor, delimiter='\t')
 														if enrichment == "yes":
 															number_triple += executor.submit(semantify_file, sorted_sources[source_type][source][triples_map], triples_map_list, ",", output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 															predicate_list = release_PTT(sorted_sources[source_type][source][triples_map],predicate_list)
@@ -4168,7 +4297,10 @@ def semantify(config_path):
 									if source_type == "csv":
 										for source in sorted_sources[source_type]:
 											if config["datasets"]["large_file"].lower() == "false":
-												reader = pd.read_csv(source)
+												if ".csv" in source:
+													reader = pd.read_csv(source, dtype = str)
+												else:
+													reader = pd.read_csv(source, dtype = str,sep="\t",header=0)
 												reader = reader.where(pd.notnull(reader), None)
 												if duplicate == "yes":
 													reader = reader.drop_duplicates(keep ='first')
@@ -4177,9 +4309,12 @@ def semantify(config_path):
 													number_triple += executor.submit(semantify_file, sorted_sources[source_type][source][triples_map], triples_map_list, ",", output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 													predicate_list = release_PTT(sorted_sources[source_type][source][triples_map],predicate_list)	
 											else:
-												with open(source, "r") as input_file_descriptor:
-													data = csv.DictReader(input_file_descriptor, delimiter=',') 
-													for triples_map in sorted_sources[source_type][source]:
+												for triples_map in sorted_sources[source_type][source]:
+													with open(source, "r") as input_file_descriptor:
+														if ".csv" in source:
+															data = csv.DictReader(input_file_descriptor, delimiter=',')
+														else:
+															data = csv.DictReader(input_file_descriptor, delimiter='\t')
 														number_triple += executor.submit(semantify_file, sorted_sources[source_type][source][triples_map], triples_map_list, ",", output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 														predicate_list = release_PTT(sorted_sources[source_type][source][triples_map],predicate_list)
 									elif source_type == "JSONPath":
@@ -4284,9 +4419,9 @@ def semantify(config_path):
 													else:
 														number_triple += executor.submit(semantify_file_array, sorted_sources[source_type][source][triples_map], triples_map_list, ",", output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 											else:
-												with open(source, "r") as input_file_descriptor:
-													data = csv.DictReader(input_file_descriptor, delimiter=',') 
-													for triples_map in sorted_sources[source_type][source]:
+												for triples_map in sorted_sources[source_type][source]:
+													with open(source, "r") as input_file_descriptor:
+														data = csv.DictReader(input_file_descriptor, delimiter=',') 
 														if enrichment == "yes":
 															number_triple += executor.submit(semantify_file, sorted_sources[source_type][source][triples_map], triples_map_list, ",", output_file_descriptor, wr, config[dataset_i]["name"], data).result()
 															predicate_list = release_PTT(sorted_sources[source_type][source][triples_map],predicate_list)
@@ -4399,10 +4534,8 @@ def semantify(config_path):
 		wr.writerow(["Number of triples", "Time"])
 		wr.writerow([number_triple, time.time()-start_time])
 
-
+	#print(time.time()-start)
 	print("Successfully semantified {}.\n".format(config[dataset_i]["name"]))
-
-		
 
 
 """

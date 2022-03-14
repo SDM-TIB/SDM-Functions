@@ -9,6 +9,35 @@ import os
 global exactMatchDic
 exactMatchDic = dict()
 
+def inner_function(row,dic,triples_map_list):
+    functions = []
+    keys = []
+    for attr in dic["inputs"]:
+        if ("reference function" in attr[1]):
+            functions.append(attr[0])
+        elif "constant" not in attr[1]:
+            keys.append(attr[0])
+    if functions:
+        temp_dics = {}
+        for function in functions:
+            for tp in triples_map_list:
+                if tp.triples_map_id == function:
+                    temp_dic = create_dictionary(tp)
+                    current_func = {"inputs":temp_dic["inputs"], 
+                                    "function":temp_dic["executes"],
+                                    "func_par":temp_dic,
+                                    "termType":True}
+                    temp_dics[function] = current_func
+        temp_row = {}
+        for dics in temp_dics:
+            value = inner_function(row,temp_dics[dics],triples_map_list)
+            temp_row[dics] = value
+        for key in keys:
+            temp_row[key] = row[key]
+        return execute_function(temp_row,None,dic)
+    else:
+        return execute_function(row,None,dic)
+
 headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
 
 def falcon_UMLS_CUI_function():
