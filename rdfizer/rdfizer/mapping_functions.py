@@ -159,6 +159,8 @@ def execute_function(row,dic):
         return replaceExactMatch(row[dic["func_par"]["value"]])
     elif "reverseString" in dic["function"]:
         return reverseString(row[dic["func_par"]["value"]])
+    elif "concat2" in dic["function"]:
+        return concat2(dic["func_par"]["value1"],row[dic["func_par"]["value2"]])
     else:
         print("Invalid function")
         print("Aborting...")
@@ -190,6 +192,8 @@ def execute_function_mysql(row,header,dic):
         return falcon_UMLS_CUI_function(row[header.index(dic["func_par"]["value"])])
     elif "replaceExactMatch" in dic["function"]:
         return replaceExactMatch(row[header.index(dic["func_par"]["value"])])
+    elif "concat2" in dic["function"]:
+        return concat2(dic["func_par"]["value1"],row[dic["func_par"]["value2"]])
     else:
         print("Invalid function")
         print("Aborting...")
